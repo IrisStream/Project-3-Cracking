@@ -1,0 +1,114 @@
+--> Main Process:
+        00401500   > 50             PUSH EAX                            ;Save EAX
+        00401501   . E8 55040000    CALL 1_5.0040195B                   ;Function 1: encode the input key to a 16 bytes string
+        00401506   . A1 3D334000    MOV EAX,DWORD PTR DS:[40333D]       ;Load 4 bytes of string we'd just encoded to EAX(3th -> 6th)
+        0040150B   . 8B1D 41334000  MOV EBX,DWORD PTR DS:[403341]       ;Load 4 bytes of string we'd just encoded to EBX(7th -> 10th)
+        00401511   . A3 E4324000    MOV DWORD PTR DS:[4032E4],EAX       ;Move first 4 bytes to another place(next to good boy)
+        00401516   . 891D E8324000  MOV DWORD PTR DS:[4032E8],EBX       ;Move second 4 bytes to the next position
+        0040151C   . E8 C0040000    CALL 1_5.004019E1                   ;Function 2
+        00401521   . 33C0           XOR EAX,EAX                         ;Reset EAX to 0
+        00401523   . 33DB           XOR EBX,EBX                         ;Reset EBX to 0
+        00401525   . 66:A1 3B334000 MOV AX,WORD PTR DS:[40333B]         ;Load (5) to AX  
+        0040152B   . 66:8B5F 08     MOV BX,WORD PTR DS:[EDI+8]          ;Load (6) to BX
+        0040152F   . 66:2BC3        SUB AX,BX                           ;AX = AX - BX                   ;(AX - BX) must equal 0x1a1c
+        00401532   . 35 3F1B0000    XOR EAX,1B3F                        ;EAX = EAX ^ 0x1b3f
+        00401537   . 2D 23010000    SUB EAX,123                         ;EAX -= 0x123
+        0040153C   . EB 03          JMP SHORT 1_5.00401541              
+        00401541   > 0BC0           OR EAX,EAX                          ;Check if EAX = 0
+        00401543     75 54          JNZ SHORT 1_5.00401599              ;If not then roll back
+        00401545   . EB 03          JMP SHORT 1_5.0040154A              ;Jump to good boy
+
+--> Function 1:
+        0040195B  /$ 55             PUSH EBP
+        0040195C  |. 8BEC           MOV EBP,ESP
+        0040195E  |. BE 1C334000    MOV ESI,1_5.0040331C                    ;Load input key to ESI
+        00401963  |. BF 3B334000    MOV EDI,1_5.0040333B                    ;EDI = 1_5.0040333B
+        00401968  |. B9 10000000    MOV ECX,10                              ;ECX = 0x10
+        0040196D  |> 0FB606         /MOVZX EAX,BYTE PTR DS:[ESI]            ;Load the first character of input key to EAX
+        00401970  |. 51             |PUSH ECX                               ;Save ECX
+        00401971  |. 50             |PUSH EAX                               ;Save EAX
+        00401972  |. E8 08000000    |CALL 1_5.0040197F                      ;Function 3: encode the current character
+        00401977  |. 8907           |MOV DWORD PTR DS:[EDI],EAX             ;Save it to EDI
+        00401979  |. 47             |INC EDI                                ;EDI++
+        0040197A  |. 46             |INC ESI                                ;ESI++(next character)
+        0040197B  |.^E2 F0          \LOOPD SHORT 1_5.0040196D               ;ECX-- and loop 'til ECX == 0
+        0040197D  |. C9             LEAVE
+        0040197E  \. C3             RETN
+
+--> Function 2:
+        004019E1  /$ 8D3D E4324000  LEA EDI,DWORD PTR DS:[4032E4]           ;load 8 bytes we'd just moved to  EDI
+        004019E7  |. 6A 00          PUSH 0                                  
+        004019E9  |. 6A 00          PUSH 0
+        004019EB  |. 50             PUSH EAX
+        004019EC  |. DF2C24         FILD QWORD PTR SS:[ESP]                 ;4 bytes of string to floating-point
+        004019EF  |. DF3424         FBSTP TBYTE PTR SS:[ESP]                ;save 10 bytes encoded to stack
+        004019F2  |. 59             POP ECX                                 ;load it to ECX
+        004019F3  |. 58             POP EAX                                 ;load it to EAX
+        004019F4  |. 8BD1           MOV EDX,ECX                             ;copy to EDX
+        004019F6  |. 8BD8           MOV EBX,EAX                             ;copy to EBX
+        004019F8  |. C1E9 04        SHR ECX,4                               ;ECX /= 16
+        004019FB  |. C1E8 04        SHR EAX,4                               ;EAX /= 16
+        004019FE  |. 83E3 0F        AND EBX,0F                              ;EBX &= 0x0f
+        00401A01  |. 81E2 0F0F0F0F  AND EDX,0F0F0F0F                        ;EDX &= 0x0f0f0f0f
+        00401A07  |. 81E1 0F0F0F0F  AND ECX,0F0F0F0F                        ;ECX &= 0x0f0f0f0f
+        00401A0D  |. 81C2 30303030  ADD EDX,30303030                        ;EDX &= 0x03030303    
+        00401A13  |. 81C1 30303030  ADD ECX,30303030                        ;ECX &= 0x03030303
+        00401A19  |. 83C0 30        ADD EAX,30                              ;EAX += 0x30
+        00401A1C  |. 83C3 30        ADD EBX,30                              ;EBX += 0x30
+        00401A1F  |. 8807           MOV BYTE PTR DS:[EDI],AL                ;AL to EDI
+        00401A21  |. 885F 01        MOV BYTE PTR DS:[EDI+1],BL              ;BL to [EDI+1]
+        00401A24  |. 884F 08        MOV BYTE PTR DS:[EDI+8],CL              ;CL to [EDI+8]
+        00401A27  |. 8857 09        MOV BYTE PTR DS:[EDI+9],DL              ;DL to [EDI+9]
+        00401A2A  |. 886F 06        MOV BYTE PTR DS:[EDI+6],CH              ;CH to [EDI+6]
+        00401A2D  |. 8877 07        MOV BYTE PTR DS:[EDI+7],DH              ;DH to [EDI+7]
+        00401A30  |. 0FC9           BSWAP ECX                               ;swap bytes ECX
+        00401A32  |. 0FCA           BSWAP EDX                               ;swap bytes edx
+        00401A34  |. 884F 02        MOV BYTE PTR DS:[EDI+2],CL              ;CL to [EDI+2]
+        00401A37  |. 8857 03        MOV BYTE PTR DS:[EDI+3],DL              ;DL to [EDI+3]
+        00401A3A  |. 886F 04        MOV BYTE PTR DS:[EDI+4],CH              ;CH to [EDI+4]
+        00401A3D  |. 8877 05        MOV BYTE PTR DS:[EDI+5],DH              ;DH to [EDI+5]
+        00401A40  |. 58             POP EAX                                 ;load EAX
+        00401A41  \. C3             RETN
+
+
+
+--> Function 3:
+        0040197F  /$ 55             PUSH EBP
+        00401980  |. 8BEC           MOV EBP,ESP
+        00401982  |. 83C4 FC        ADD ESP,-4
+        00401985  |. 33C0           XOR EAX,EAX                             ;Reset EAX to 0
+        00401987  |. BB 56141200    MOV EBX,121456                          ;EBX = 0x121456
+        0040198C  |. 05 11100001    ADD EAX,1001011                         ;EAX = 0x1001011
+        00401991  |. C645 FC 2D     MOV BYTE PTR SS:[EBP-4],2D              ;[EBP-4] = 0x2D
+        00401995  |. 8A5D FC        MOV BL,BYTE PTR SS:[EBP-4]              ;BL = 0x2D
+        00401998  |. 02C3           ADD AL,BL                               ;AL = AL + BL
+        0040199A  |. C645 FD 3F     MOV BYTE PTR SS:[EBP-3],3F              ;[EBP-3] = 0x3F
+        0040199E  |. 8A5D FD        MOV BL,BYTE PTR SS:[EBP-3]              ;BL = 0x3F
+        004019A1  |. 02C3           ADD AL,BL                               ;AL = AL + BL
+        004019A3  |. C645 FE 3F     MOV BYTE PTR SS:[EBP-2],3F              ;[EBP-2] = 0x3F
+        004019A7  |. 8A5D FE        MOV BL,BYTE PTR SS:[EBP-2]              ;BL = 0x3F
+        004019AA  |. 32C3           XOR AL,BL                               ;AL = AL ^ BL
+        004019AC  |. C645 FF 02     MOV BYTE PTR SS:[EBP-1],2               ;[EBP-1] = 0x2
+        004019B0  |. 005D FF        ADD BYTE PTR SS:[EBP-1],BL              ;[EBP-1] += BL
+        004019B3  |. F7E3           MUL EBX                                 ;EAX = EAX * EBX
+        004019B5  |. 93             XCHG EAX,EBX                            ;Swap(EAX, EBX)
+        004019B6  |. 23C3           AND EAX,EBX                             ;EAX = EAX & EBX
+        004019B8  |. 86F8           XCHG AL,BH                              ;Swap(AL, BH)
+        004019BA  |. 32C3           XOR AL,BL                               ;AL = AL ^ BL
+        004019BC  |. 83E8 09        SUB EAX,9                               ;EAX -= 9
+        004019BF  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]            ;Load cur char to EAX
+        004019C2  |. 83C0 01        ADD EAX,1                               ;EAX++
+        004019C5  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]            ;Load cur char to EAX
+        004019C8  |. 03C1           ADD EAX,ECX                             ;EAX + 0x10
+        004019CA  |. 83F8 21        CMP EAX,21                              ;If(EAX >= 0x21)
+        004019CD  |. 73 03          JNB SHORT 1_5.004019D2                  ;  jump
+        004019CF  |. 83C0 21        ADD EAX,21                              ; EAX += 0x21 if less than
+        004019D2  |> 83F8 7B        CMP EAX,7B                              ;If(EAX <= 0x7B)
+        004019D5  |. 7E 02          JLE SHORT 1_5.004019D9                  ;   jump
+        004019D7  |. D1E8           SHR EAX,1                               ;EAX /= 2
+        004019D9  |> 8945 08        MOV DWORD PTR SS:[EBP+8],EAX            ;Save EAX to cur char
+        004019DC  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]            ;Load new cur char to EAX
+        004019DF  |. C9             LEAVE
+        004019E0  \. C3             RETN
+
+
