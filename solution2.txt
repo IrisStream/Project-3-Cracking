@@ -1,0 +1,91 @@
+Đầu tiên, bạn cần phải chạy trên hệ điều hành win 7 hoặc thấp hơn để crack được file này.
+Mình nghĩ là bạn nên dùng VMWare.
+
+Bước đầu tiên vẫn là thử vận may :)).
+File này yêu cầu mình phải nhập ID và Serial và chỉ được nhập các ký tự là số.
+    ID:     1111 (Giới hạn 4 chữ số)
+    Serial: 123456 (Giới hạn 16 chữ số)
+Mình chẳng nhận được badboy hay goodboy nào cả! Bài này có vẻ khó nhai hơn bài trước.
+
+Giờ thì mở Olly. Vì không có badboy hiện lên khi mình nhập sai. Nên việc debug file này khá vất vả.
+Sau một khoảng thời gian thì mình đã dò được 2 hàm là GetDlgItemInt. Và mình đã google và phát hiện
+hàm này có chức năng. Chuyển 1 chuỗi mà người dùng nhập trong 1 hộp thoại thành số nguyên. Điều này 
+khá khớp với điều kiện nhập của ID và Serial (chỉ có thể nhập ký tự số). Nên mình nghi là chúng dùng
+để chuyển chuỗi ID và Serial thì số để kiểm tra Serial.
+0040111E   . 51             PUSH ECX
+0040111F   . 53             PUSH EBX
+00401120   . 50             PUSH EAX
+00401121   . 6A 01          PUSH 1                                   ; /IsSigned = TRUE
+00401123   . 6A 00          PUSH 0                                   ; |pSuccess = NULL
+00401125   . 68 EC030000    PUSH 3EC                                 ; |ControlID = 3EC (1004.)
+0040112A   . FF75 08        PUSH DWORD PTR SS:[EBP+8]                ; |hWnd
+0040112D   . E8 D8000000    CALL <JMP.&user32.GetDlgItemInt>         ; \GetDlgItemInt
+00401132   . 8BD8           MOV EBX,EAX
+00401134   . 33C0           XOR EAX,EAX
+00401136   . 6A 01          PUSH 1                                   ; /IsSigned = TRUE
+00401138   . 6A 00          PUSH 0                                   ; |pSuccess = NULL
+0040113A   . 68 ED030000    PUSH 3ED                                 ; |ControlID = 3ED (1005.)
+0040113F   . FF75 08        PUSH DWORD PTR SS:[EBP+8]                ; |hWnd
+00401142   . E8 C3000000    CALL <JMP.&user32.GetDlgItemInt>         ; \GetDlgItemInt
+
+Và đúng như vậy, sau vài lần thử thì mình phát hiện là số mà người dùng nhập vào sẽ được lưu vào EAX sai khi
+gọi GetDlgItemInt.
+Ngay dưới đoạn chương trình nhập là lời gọi đến 1 hàm nào đó. Hàm này mình nghi nó sẽ là CheckKey(). Vì sau gọi 
+hàm thì sẽ có đoạn lệnh kiểm tra. và nhảy đến 1 đoạn lệnh gồm các hàm GetDlgInt và EnableWindow. Toàn là những từ
+gợi mình nghĩ về việc nếu nhập đúng key thì chương trình sẽ được crack và sẽ có điều gì đó xảy ra. Mình sẽ gọi nó 
+là goodboy segment
+00401147   . 8BC8           MOV ECX,EAX
+00401149   . E8 4DFFFFFF    CALL 1_2.0040109B
+0040114E   . 3BC3           CMP EAX,EBX
+00401150   . 74 0C          JE SHORT 1_2.0040115E
+00401152   . BB 00000000    MOV EBX,0
+00401157   . BA 00000000    MOV EDX,0
+0040115C   . EB 53          JMP SHORT 1_2.004011B1
+0040115E   > 68 EB030000    PUSH 3EB                                 ; /ControlID = 3EB (1003.)
+00401163   . FF75 08        PUSH DWORD PTR SS:[EBP+8]                ; |hWnd
+00401166   . E8 99000000    CALL <JMP.&user32.GetDlgItem>            ; \GetDlgItem
+0040116B   . 6A 00          PUSH 0                                   ; /Enable = FALSE
+0040116D   . 50             PUSH EAX                                 ; |hWnd
+0040116E   . E8 85000000    CALL <JMP.&user32.EnableWindow>          ; \EnableWindow
+00401173   . 68 EC030000    PUSH 3EC                                 ; /ControlID = 3EC (1004.)
+00401178   . FF75 08        PUSH DWORD PTR SS:[EBP+8]                ; |hWnd
+0040117B   . E8 84000000    CALL <JMP.&user32.GetDlgItem>            ; \GetDlgItem
+00401180   . 6A 00          PUSH 0                                   ; /Enable = FALSE
+00401182   . 50             PUSH EAX                                 ; |hWnd
+00401183   . E8 70000000    CALL <JMP.&user32.EnableWindow>          ; \EnableWindow
+00401188   . 68 ED030000    PUSH 3ED                                 ; /ControlID = 3ED (1005.)
+0040118D   . FF75 08        PUSH DWORD PTR SS:[EBP+8]                ; |hWnd
+00401190   . E8 6F000000    CALL <JMP.&user32.GetDlgItem>            ; \GetDlgItem
+00401195   . 6A 00          PUSH 0                                   ; /Enable = FALSE
+00401197   . 50             PUSH EAX                                 ; |hWnd
+00401198   . E8 5B000000    CALL <JMP.&user32.EnableWindow>          ; \EnableWindow
+
+
+Giờ thì mình sẽ nhảy đến CheckKey() xem nó làm gì.
+Theo như các hàm nhập thì EBX sẽ giữ giá trị của ID, còn EDX sẽ bằng 0
+Nguyên nhân EDX = 0, là do nếu hàm GetDlgItemInt chạy thành công thì EDX = 0.
+Nhưng điều này chỉ đúng với các hệ điều hành trước win 10. Đối với win10, mình 
+nhận được giá trị EDX nào đó không cố định. Điều này đã ngốn mình 1 khoảng thời 
+gian khá dài và gian khổ để hiểu đươc tại sao lại thế và cách khắc phục.
+0040109B  /$ 83C3 4C        ADD EBX,4C
+0040109E  |. 83C2 03        ADD EDX,3
+004010A1  |. 43             INC EBX
+004010A2  |. 81C3 8B030000  ADD EBX,38B
+004010A8  |. 03DB           ADD EBX,EBX
+004010AA  |. 0FAFDA         IMUL EBX,EDX
+004010AD  |. 4B             DEC EBX
+004010AE  \. C3             RETN
+
+Sau đoạn chương trình này mình có thể thấy inputID của mình trải qua các 
+phép toán và trở thành: (inputID + 0x4C + 0x01 + 0x38B) * 2 * 3 - 1
+Tóm gọn lại là: encryptedID = inputID * 6 + 5903(encryptedID là inputID được mã hóa)
+Thoát khỏi hàm này là lệnh CMP EAX, EBX. Với EAX là inputSerial còn EBX lúc này là encryptedID.
+Nếu 2 giá trị bằng nhau thì sẽ nhảy đến goodboy segment.
+
+Đến đây thì chắc ai cũng biết cách để viết keygen rồi ha.
+Let's code and crack it :)))
+DON'T FORGET TO RUN IT ON VIRTUAL MACHINE AND NOT WIN10
+
+
+
+

@@ -1,0 +1,64 @@
+Trước khi bắt đầu, mình sẽ có 1 số quy ước:
+    inputKey: là key mà mình nhập vào. Nếu chương trình yêu cầu nhập (id,pw) thì mình sẽ gọi nó là inputID và inputPW chẳng hạn
+    goodKey: là 1 key đúng.
+    badKey: là 1 key sai.
+    CheckKey(): là hàm kiểm tra inputKey có phải là 1 goodKey không
+Đầu tiên, mình chạy thử exe và thử vận may xem hôm nay có phải là 1 ngày may mắn hay không?
+Và điều hiển nhiên là mình khi mình nhập "SonDepTrai" thì mình nhận được dòng thông báo: "Better luck next time! You are unsuccessful."
+Well, not my lucky day :)))
+
+Giờ thì mở Olly lên thôi! Mình đã có được 1 chuỗi bad boy trong lần thử trên. Giờ thì tìm đến nó.
+00401302  |. C70424 0030400>MOV DWORD PTR SS:[ESP],1_1.00403000      ; ||ASCII "Please enter a key: "
+00401309  |. E8 A2050000    CALL <JMP.&msvcrt.printf>                ; |\printf
+0040130E  |. C74424 04 1040>MOV DWORD PTR SS:[ESP+4],1_1.00404010    ; |
+00401316  |. C70424 1530400>MOV DWORD PTR SS:[ESP],1_1.00403015      ; |ASCII "%d"
+0040131D  |. E8 7E050000    CALL <JMP.&msvcrt.scanf>                 ; \scanf
+00401322  |. E8 69FFFFFF    CALL 1_1.00401290                                           ;this must be the CheckKey(inputKey) function
+00401327  |. 833D 10404000 >CMP DWORD PTR DS:[404010],1              ; |
+0040132E  |. 75 0E          JNZ SHORT 1_1.0040133E                   ; |
+00401330  |. C70424 1830400>MOV DWORD PTR SS:[ESP],1_1.00403018      ; |ASCII "Congratulation! You are successful.
+"
+00401337  |. E8 74050000    CALL <JMP.&msvcrt.printf>                ; \printf
+0040133C  |. EB 0C          JMP SHORT 1_1.0040134A
+0040133E  |> C70424 4030400>MOV DWORD PTR SS:[ESP],1_1.00403040      ; |ASCII "Better luck next time! You are unsuccessful.
+"
+00401345  |. E8 66050000    CALL <JMP.&msvcrt.printf>                ; \printf
+0040134A  |> E8 D1040000    CALL <JMP.&msvcrt._getch>                ; [_getch
+0040134F  |. B8 00000000    MOV EAX,0
+00401354  |. C9             LEAVE
+00401355  \. C3             RETN
+
+Ở đoạn code này, mình có thể dễ dàng thấy được 1 hàm scanf("%d") sau hàm printf("Please enter a key").
+Từ đây mình có thể kết luận là inputKey cần phải nhập phải là 1 số nguyên.
+Tiếp đó sau lệnh scanf là 1 lời gọi đến 1 hàm nào đó. Mình sẽ tạm gọi nó là hàm CheckKey(inputKey) vì có thể nhận thấy là sau
+khi thực hiện xong hàm đấy thì sẽ có dòng lệnh CMP kiểm tra và nhảy đến goodboy hoặc badboy.
+Giờ mình sẽ nhảy vào CheckKey(inputKey)
+00401290  /$ 55             PUSH EBP
+00401291  |. 89E5           MOV EBP,ESP
+00401293  |. 83EC 04        SUB ESP,4
+00401296  |. C745 FC C80000>MOV DWORD PTR SS:[EBP-4],0C8
+0040129D  |. 8B55 FC        MOV EDX,DWORD PTR SS:[EBP-4]
+004012A0  |. 89D0           MOV EAX,EDX
+004012A2  |. C1E0 02        SHL EAX,2
+004012A5  |. 01D0           ADD EAX,EDX
+004012A7  |. 8945 FC        MOV DWORD PTR SS:[EBP-4],EAX
+004012AA  |. 8D45 FC        LEA EAX,DWORD PTR SS:[EBP-4]
+004012AD  |. 8330 64        XOR DWORD PTR DS:[EAX],64
+004012B0  |. 8D45 FC        LEA EAX,DWORD PTR SS:[EBP-4]
+004012B3  |. F710           NOT DWORD PTR DS:[EAX]
+004012B5  |. A1 10404000    MOV EAX,DWORD PTR DS:[404010]
+004012BA  |. 3B45 FC        CMP EAX,DWORD PTR SS:[EBP-4]
+004012BD  |. 75 0C          JNZ SHORT 1_1.004012CB
+004012BF  |. C705 10404000 >MOV DWORD PTR DS:[404010],1
+004012C9  |. EB 0A          JMP SHORT 1_1.004012D5
+004012CB  |> C705 10404000 >MOV DWORD PTR DS:[404010],0
+004012D5  |> C9             LEAVE
+004012D6  \. C3             RETN
+
+Ở đoạn chương trình này, mình sẽ để bạn tự đọc và tìm hiểu xem nó cụ thể làm gì.
+Nhưng mình sẽ gợi ý là sau khi thực hiện hàng loạt các phép tính thì nó sẽ kiểm tra
+xem inputKey có bằng 1 số nào đó không. Và dĩ nhiên số đó là goodKey mà mình cần tìm.
+
+Chương trình này chỉ có duy nhất 1 key. Và khá dễ tìm nên mình sẽ nhường lại việc viết keygen cho ai làm báo cáo nhé :v heheh
+
+goodKey = -909

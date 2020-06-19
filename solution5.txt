@@ -1,0 +1,185 @@
+Bài này có thể nói là bài phức tạp nhất về mặt tính toán.
+Khi chạy thử file, mình đã ngửi thầy mùi không thơm về bài này rồi.
+Không nhận được thông báo nào khi mình nhập sai cả.
+
+Dù không có badboy hay goodboy nào tìm được. Mình vẫn cố bám víu vào các thông báo khả nghi nhất. 
+Và mình đã may mắn khi chạy đến thông báo: "Your name must be at least one byte!".
+Có thể thấy phía trên dòng thông báo có 1 lời gọi hàm GetDlgItemTextA().
+Lời gọi hàm quá quen thuộc và nó chỉ có thể là nơi mà inputKey được nhập.
+0040148E   . 6A 1E          PUSH 1E                                  ; /Count = 1E (30.)
+00401490   . 68 1C334000    PUSH 1_5.0040331C                        ; |Buffer = 1_5.0040331C
+00401495   . 68 C9000000    PUSH 0C9                                 ; |ControlID = C9 (201.)
+0040149A   . FF35 00304000  PUSH DWORD PTR DS:[403000]               ; |hWnd = 0015110C ('Ribbere 1.42 (Unregistered)',class='#32770')
+004014A0   . E8 59080000    CALL <JMP.&user32.GetDlgItemTextA>       ; \GetDlgItemTextA
+004014A5   . 83F8 01        CMP EAX,1
+004014A8   . 7D 56          JGE SHORT 1_5.00401500                   ; Lệnh này chắc chắn là lệnh nhảy đến phần xử lý key. Vì nếu không nhảy sẽ chạy thông báo ở dưới
+004014AA   . EB 2F          JMP SHORT 1_5.004014DB
+004014AC   . EB 25          JMP SHORT 1_5.004014D3
+004014AE   . 59 6F 75 72 20>ASCII "Your name must b"
+004014BE   . 65 20 61 74 20>ASCII "e at least one b"
+004014CE   . 79 74 65 21 00>ASCII "yte!",0
+004014D3   > EB 06          JMP SHORT 1_5.004014DB
+004014D5   . 45 72 72 6F 72>ASCII "Error",0
+004014DB   > 6A 40          PUSH 40                                  ; /Style = MB_OK|MB_ICONASTERISK|MB_APPLMODAL
+004014DD   . 68 D5144000    PUSH 1_5.004014D5                        ; |Title = "Error"
+004014E2   . 68 AE144000    PUSH 1_5.004014AE                        ; |Text = "Your name must be at least one byte!"
+004014E7   . 6A 00          PUSH 0                                   ; |hOwner = NULL
+004014E9   . E8 3A080000    CALL <JMP.&user32.MessageBoxA>           ; \MessageBoxA
+004014EE   . 6A 00          PUSH 0                                   ; /Enable = FALSE
+004014F0   . FF35 60304000  PUSH DWORD PTR DS:[403060]               ; |hWnd = 00510156 (class='Edit',parent=0015110C)
+004014F6   . E8 D3070000    CALL <JMP.&user32.EnableWindow>          ; \EnableWindow
+
+Đoạn chương trình xử lý chính khá ngắn cùng với 2 hàm con.
+Lần này thì việc chạy và đoán xem hàm có chức năng gì không còn hiệu quả nữa.
+Hai hàm này không đơn giản như ở các bài trước.
+Mình sẽ tạm gọi chúng là encrypt1() và encrypt2()
+00401500   > 50             PUSH EAX
+00401501   . E8 55040000    CALL 1_5.0040195B                       ;encrypt1()
+00401506   . A1 3D334000    MOV EAX,DWORD PTR DS:[40333D]
+0040150B   . 8B1D 41334000  MOV EBX,DWORD PTR DS:[403341]
+00401511   . A3 E4324000    MOV DWORD PTR DS:[4032E4],EAX
+00401516   . 891D E8324000  MOV DWORD PTR DS:[4032E8],EBX
+0040151C   . E8 C0040000    CALL 1_5.004019E1                       ;encrypt2()
+00401521   . 33C0           XOR EAX,EAX
+00401523   . 33DB           XOR EBX,EBX
+00401525   . 66:A1 3B334000 MOV AX,WORD PTR DS:[40333B]
+0040152B   . 66:8B5F 08     MOV BX,WORD PTR DS:[EDI+8]
+0040152F   . 66:2BC3        SUB AX,BX
+00401532   . 35 3F1B0000    XOR EAX,1B3F
+00401537   . 2D 23010000    SUB EAX,123
+0040153C   . EB 03          JMP SHORT 1_5.00401541
+0040153E     01             DB 01
+0040153F     44             DB 44                                    ;  CHAR 'D'
+00401540     00             DB 00
+00401541   > 0BC0           OR EAX,EAX
+00401543   . 75 54          JNZ SHORT 1_5.00401599
+
+Giờ thì nhảy vào encrypt1()
+0040195B  /$ 55             PUSH EBP
+0040195C  |. 8BEC           MOV EBP,ESP
+0040195E  |. BE 1C334000    MOV ESI,1_5.0040331C                    ;  ASCII "SonDepTrai"
+00401963  |. BF 3B334000    MOV EDI,1_5.0040333B
+00401968  |. B9 10000000    MOV ECX,10                              ; ECX = 0x10                              
+0040196D  |> 0FB606         /MOVZX EAX,BYTE PTR DS:[ESI]            ;Lấy 1 byte tại ESI(ESI ban đầu lưu inputKey) lưu vào EAX
+00401970  |. 51             |PUSH ECX                               
+00401971  |. 50             |PUSH EAX
+00401972  |. E8 08000000    |CALL 1_5.0040197F                      ;Hàm này theo dự đoán là sẽ mã hóa ký tự ở EAX vì có tham số EAX (charEncrypt(EAX,ECX))
+00401977  |. 8907           |MOV DWORD PTR DS:[EDI],EAX             ;Sau khi thực hiện thì giá trị của EAX bị thay đổi và lưu vào vùng nhớ EDI
+00401979  |. 47             |INC EDI                                ;Tăng EDI để có thể chứa ký tự mã hóa tiếp theo
+0040197A  |. 46             |INC ESI                                ;Tăng ESI để lấy ký tự tiếp theo của inputKey
+0040197B  |.^E2 F0          \LOOPD SHORT 1_5.0040196D               ;ECX-- và lặp đến khi ECX = 0
+0040197D  |. C9             LEAVE
+0040197E  \. C3             RETN
+
+
+Đoạn chương trình này còn 1 hàm con mà mình chưa hiểu hết đươc. Mình sẽ gọi hàm này là charEncrypt(char c,int i).
+Giờ thử chạy vào hàm này.
+0040197F  /$ 55             PUSH EBP
+00401980  |. 8BEC           MOV EBP,ESP
+00401982  |. 83C4 FC        ADD ESP,-4
+00401985  |. 33C0           XOR EAX,EAX
+00401987  |. BB 56141200    MOV EBX,121456
+0040198C  |. 05 11100001    ADD EAX,1001011
+00401991  |. C645 FC 2D     MOV BYTE PTR SS:[EBP-4],2D
+00401995  |. 8A5D FC        MOV BL,BYTE PTR SS:[EBP-4]
+00401998  |. 02C3           ADD AL,BL
+0040199A  |. C645 FD 3F     MOV BYTE PTR SS:[EBP-3],3F
+0040199E  |. 8A5D FD        MOV BL,BYTE PTR SS:[EBP-3]
+004019A1  |. 02C3           ADD AL,BL
+004019A3  |. C645 FE 3F     MOV BYTE PTR SS:[EBP-2],3F
+004019A7  |. 8A5D FE        MOV BL,BYTE PTR SS:[EBP-2]
+004019AA  |. 32C3           XOR AL,BL
+004019AC  |. C645 FF 02     MOV BYTE PTR SS:[EBP-1],2
+004019B0  |. 005D FF        ADD BYTE PTR SS:[EBP-1],BL
+004019B3  |. F7E3           MUL EBX
+004019B5  |. 93             XCHG EAX,EBX
+004019B6  |. 23C3           AND EAX,EBX
+004019B8  |. 86F8           XCHG AL,BH
+004019BA  |. 32C3           XOR AL,BL
+004019BC  |. 83E8 09        SUB EAX,9
+004019BF  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]    ;Load ký tự vào EAX
+004019C2  |. 83C0 01        ADD EAX,1                       ;Tăng lên 1 đơn vị
+004019C5  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]    ;Load ký tự vào EAX lần nữa (Thật sự thì 2 lệnh trên chẳng có ích lợi gì)
+004019C8  |. 03C1           ADD EAX,ECX                     ;EAX += ECX;
+004019CA  |. 83F8 21        CMP EAX,21                      
+004019CD  |. 73 03          JNB SHORT 1_5.004019D2          ;if(EAX<0x21)
+004019CF  |. 83C0 21        ADD EAX,21                      ;   EAX += 0x21
+004019D2  |> 83F8 7B        CMP EAX,7B                  
+004019D5  |. 7E 02          JLE SHORT 1_5.004019D9          ;if(EAX>0x7B)
+004019D7  |. D1E8           SHR EAX,1                       ;   EAX >>= 1;
+004019D9  |> 8945 08        MOV DWORD PTR SS:[EBP+8],EAX    ;Lưu lại vào stack
+004019DC  |. 8B45 08        MOV EAX,DWORD PTR SS:[EBP+8]
+004019DF  |. C9             LEAVE
+004019E0  \. C3             RETN
+
+Đoạn đầu của chương trình khá là đánh lạc hướng. Nó tính toán các phép tính vô nghĩa là phức tạp và cuối cùng không sử dụng lại
+các kết quả tính được. Mình sẽ không comment đoạn chương trình đó.
+Vậy là mình biết được charEncrypt() sẽ cộng EAX với ECX và giữ cho ký tự vừa mã hóa nằm trong đoạn [0x21;0x7B]
+Kết luận về encrypt1() là sẽ mã hóa 1 chuỗi gồm 16 ký tự có phần đầu đươc mã hóa từ các ký tự trong inputKey còn phần sau sẽ là ngẫu nhiên.
+Mình sẽ gọi chuỗi do encrypt1() tạo ra là encrypted1
+Giờ sẽ đến với encrypt2()
+004019E1  /$ 8D3D E4324000  LEA EDI,DWORD PTR DS:[4032E4]
+004019E7  |. 6A 00          PUSH 0
+004019E9  |. 6A 00          PUSH 0
+004019EB  |. 50             PUSH EAX                    ;Đưa encrypted1[3..6] vào stack
+004019EC  |. DF2C24         FILD QWORD PTR SS:[ESP]     ;Hàm này có chức năng chuyển số lưu ở hệ thập lục phân thành thập phân
+004019EF  |. DF3424         FBSTP TBYTE PTR SS:[ESP]    ;Chuyển số thập phân đến stack; số này được lưu bằng 10 bytes
+004019F2  |. 59             POP ECX                     ;load phần đâu của số trên vào ECX
+004019F3  |. 58             POP EAX                     ;load phần còn lại vào EAX
+004019F4  |. 8BD1           MOV EDX,ECX                 ;Copy ECX vào EDX
+004019F6  |. 8BD8           MOV EBX,EAX                 ;Copy EAX vào EBX
+004019F8  |. C1E9 04        SHR ECX,4                   ;ECX >>= 4
+004019FB  |. C1E8 04        SHR EAX,4                   ;EAX >>= 4
+004019FE  |. 83E3 0F        AND EBX,0F                  ;EBX &= 0x0F
+00401A01  |. 81E2 0F0F0F0F  AND EDX,0F0F0F0F            ;EDX &= 0F0F0F0F
+00401A07  |. 81E1 0F0F0F0F  AND ECX,0F0F0F0F            ;ECX &= 0F0F0F0F
+00401A0D  |. 81C2 30303030  ADD EDX,30303030            ;ECX &= 30303030
+00401A13  |. 81C1 30303030  ADD ECX,30303030            ;ECX &= 30303030
+00401A19  |. 83C0 30        ADD EAX,30                  ;EAX += 0x30    
+00401A1C  |. 83C3 30        ADD EBX,30                  ;EBX += 0x30
+00401A1F  |. 8807           MOV BYTE PTR DS:[EDI],AL    ;Di chuyển từng bytes dữ liệu vào EDI
+00401A21  |. 885F 01        MOV BYTE PTR DS:[EDI+1],BL
+00401A24  |. 884F 08        MOV BYTE PTR DS:[EDI+8],CL
+00401A27  |. 8857 09        MOV BYTE PTR DS:[EDI+9],DL
+00401A2A  |. 886F 06        MOV BYTE PTR DS:[EDI+6],CH
+00401A2D  |. 8877 07        MOV BYTE PTR DS:[EDI+7],DH
+00401A30  |. 0FC9           BSWAP ECX                   ;Đảo thứ tự các bytes của ECX
+00401A32  |. 0FCA           BSWAP EDX                   ;Đảo thứ tự các bytes của EDX
+00401A34  |. 884F 02        MOV BYTE PTR DS:[EDI+2],CL
+00401A37  |. 8857 03        MOV BYTE PTR DS:[EDI+3],DL
+00401A3A  |. 886F 04        MOV BYTE PTR DS:[EDI+4],CH
+00401A3D  |. 8877 05        MOV BYTE PTR DS:[EDI+5],DH
+00401A40  |. 58             POP EAX
+00401A41  \. C3             RETN
+
+Giữa encrypt1() và encrypt2() có 1 đoạn lệnh ngắn. Nếu chịu khó quan sát và tìm kiếm 
+thì ta sẽ thấy rằng EAX sẽ lưu 4 bit từ bit thứ 3 đến bit thứ 6 của encrypted1 và EBX sẽ lưu 4 bit kế tiếp.
+Chúng sẽ được di chuyển đến 1 vùng nhớ khác trong RAM và bắt đầu vào encrypt2()
+Có thể thấy hàm này khá phức tạp nhưng về kết quả thì mình có thể tóm gọn lại là lấy encrypted1[3..6](việc load thêm encrypted1[7..10] chỉ để đánh lạc hướng) chuyển thành số thập phân
+rồi chuyễn số vừa mã hóa đươc sang dạng chuỗi. Mình sẽ gọi dãy số vừa được mã hóa là encrypted2
+
+Trở về với chương trình chính. 
+Giờ thì mình đã biết được 2 hàm encrypt1() và encrypt2().
+Sau khi gọi 2 hàm này. Mình thấy được:
+00401521   . 33C0           XOR EAX,EAX                             ;EAX = 0
+00401523   . 33DB           XOR EBX,EBX                             ;EBX = 0
+00401525   . 66:A1 3B334000 MOV AX,WORD PTR DS:[40333B]             ;Chuyển 2 bytes đầu tiên của encrypted1 vào AX
+0040152B   . 66:8B5F 08     MOV BX,WORD PTR DS:[EDI+8]              ;Chuyển 2 bytes cuối cùng của encrypted2 vào BX
+0040152F   . 66:2BC3        SUB AX,BX                               ;AX -= BX
+00401532   . 35 3F1B0000    XOR EAX,1B3F                            ;EAX ^= 0x1B3F
+00401537   . 2D 23010000    SUB EAX,123                             ;EAX -= 0x123
+0040153C   . EB 03          JMP SHORT 1_5.00401541                  
+0040153E     01             DB 01
+0040153F     44             DB 44                                    ;  CHAR 'D'
+00401540     00             DB 00
+00401541   > 0BC0           OR EAX,EAX                              
+00401543   . 75 54          JNZ SHORT 1_5.00401599                  ;if(EAX == 0) thì sẽ chạy đến goodboy
+
+Các hàm mã hóa lồng nhau của bài này khá phức tạp và có nhiều sự đánh lạc hướng.
+Nhưng ta có thể tổng kết lại như sau.
+Chúng ta cần nhập 1 chuỗi có ít nhất 6 ký tự.
+inputKey sẽ được mã hóa thành encrypted1
+encrypted1[3..6] sẽ được mã hóa thành encrypted2
+Lấy encrypted1[1..2] và 2 bytes cuối của encrypted2 thực hiện 1 số phép toán để sao cho EAX = 0.
+Ta có thể giảm bớt các phép tính trên lại thành (AX-BX) = 0x1A1C
+Từ đây mà mình có thể viết đươc keygen.

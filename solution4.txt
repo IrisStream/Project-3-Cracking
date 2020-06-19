@@ -1,0 +1,145 @@
+Giao diện nhập của bài này khá giống với bài 2. Cơ mà lần này thì lại có badboy.
+Khi nhận được thông báo: "Key/Keys not accepted!". Mình đã nghĩ là "bài này dễ v**"
+Đúng là mình tìm được badboy và goodboy trong Olly.
+004037C7  |. 6A 00          PUSH 0                                   ; /Style = MB_OK|MB_APPLMODAL
+004037C9  |. 68 5CB14700    PUSH 1_4.0047B15C                        ; |Title = "nFO"
+004037CE  |. 68 48B14700    PUSH 1_4.0047B148                        ; |Text = "Serial Accepted"
+004037D3  |. 8B4D 08        MOV ECX,DWORD PTR SS:[EBP+8]             ; |
+004037D6  |. 51             PUSH ECX                                 ; |hOwner
+004037D7  |. FF15 90144A00  CALL DWORD PTR DS:[4A1490]               ; \MessageBoxA
+004037DD  |. 3BF4           CMP ESI,ESP
+004037DF  |. E8 5C1E0100    CALL 1_4.00415640
+004037E4  |. EB 1F          JMP SHORT 1_4.00403805
+004037E6  |> 8BF4           MOV ESI,ESP
+004037E8  |. 6A 00          PUSH 0                                   ; /Style = MB_OK|MB_APPLMODAL
+004037EA  |. 68 3CB14700    PUSH 1_4.0047B13C                        ; |Title = ":: Status"
+004037EF  |. 68 20B14700    PUSH 1_4.0047B120                        ; |Text = "Key/Keys not accepted!"
+004037F4  |. 8B55 08        MOV EDX,DWORD PTR SS:[EBP+8]             ; |
+004037F7  |. 52             PUSH EDX                                 ; |hOwner
+004037F8  |. FF15 90144A00  CALL DWORD PTR DS:[4A1490]               ; \MessageBoxA
+
+Các dóng lệnh trước dòng lệnh phía trên cho mình 1 lời gọi vào 1 hàm gì đó và sau đó là 3 lần kiểm tra. Nếu pass 
+hết 3 lần kiểm tra này thì mình sẽ đến được với goodboy. Ok vậy mình sẽ gọi hàm đấy là CheckKey()
+0040379C  |. 50             PUSH EAX
+0040379D  |. E8 8E270100    CALL 1_4.00415F30                   ;CheckKey()
+004037A2  |. 83C4 08        ADD ESP,8
+004037A5  |. 8945 A8        MOV DWORD PTR SS:[EBP-58],EAX
+004037A8  |. E8 A9DCFFFF    CALL 1_4.00401456
+004037AD  |. 833D F4624900 >CMP DWORD PTR DS:[4962F4],1
+004037B4  |. 75 30          JNZ SHORT 1_4.004037E6
+004037B6  |. 833D F8624900 >CMP DWORD PTR DS:[4962F8],1
+004037BD  |. 75 27          JNZ SHORT 1_4.004037E6
+004037BF  |. 837D A8 00     CMP DWORD PTR SS:[EBP-58],0
+004037C3  |. 75 21          JNZ SHORT 1_4.004037E6
+
+Nhảy đến CheckKey() và điều mà mình nhận thấy dược là ECX đang lưu 1 chuỗi nào đó(mình sẽ gọi nó là magicKey) và EDX lưu inputSerial đã bị đảo ngược.
+Theo suy đoán của mình thì có thể đây là hàm so sánh xem inputSerial của mình có khớp với chuỗi đấy không?
+Để chắc chắn rằng magicKey là độc lập hay phụ thuộc vào inputName. Mình sẽ nhập thử các inputName khác nhau.
+Và mình đã nhận được các magicKey khác nhau sau mỗi lần chạy. Vậy chắc chắn là magicKey sẽ phụ thuộc vào inputName.
+Giờ mình cần phải chắc chắn là đây là hàm so sánh inputSerial với magicKey.
+Mình sẽ nhập thử inputName là "SonDepTrai" và quan sát xem magicKey đối với inputName này là gì.
+Vậy là mình nhận được magicKey = "FFFFFD67". 
+Ok giờ chạy lại và nhập magicKey vào serial thử xem. Cơ mà quan sát thấy inputSerial bị đảo ngược lại trong CheckKey().
+Vậy mình cần phải nhập magicKey đảo ngược.
+Và mọi chuyện đã đi đúng thì những gì mà mình nghĩ. Thông báo: "Serial Accepted" hiện lên. 
+Việc còn lại là tìm hiểu xem magicKey đã được tạo ra như thế nào
+Kéo lên trên đoạn CheckKey(). Mình thấy được 2 lời gọi hàm GetDlgItemTextA. Hàm này khác giống với hàm GetDlgItemInt
+mà mình đã tìm hiểu khi làm bài 2. Với 1 chút tìm hiểu thì hàm này là hàm chuyển giá trị nhập trong hộp thoại thành chuỗi.
+00403698  |. 6A 14          PUSH 14                                  ; /Count = 14 (20.)
+0040369A  |. 8D45 EC        LEA EAX,DWORD PTR SS:[EBP-14]            ; |
+0040369D  |. 50             PUSH EAX                                 ; |Buffer
+0040369E  |. 6A 6A          PUSH 6A                                  ; |ControlID = 6A (106.)
+004036A0  |. 8B4D 08        MOV ECX,DWORD PTR SS:[EBP+8]             ; |
+004036A3  |. 51             PUSH ECX                                 ; |hWnd
+004036A4  |. FF15 98144A00  CALL DWORD PTR DS:[4A1498]               ; \GetDlgItemTextA
+004036AA  |. 3BF4           CMP ESI,ESP
+004036AC  |. E8 8F1F0100    CALL 1_4.00415640
+004036B1  |. 8D55 EC        LEA EDX,DWORD PTR SS:[EBP-14]
+004036B4  |. 52             PUSH EDX
+004036B5  |. E8 86290100    CALL 1_4.00416040
+004036BA  |. 83C4 04        ADD ESP,4
+004036BD  |. 8BF4           MOV ESI,ESP
+004036BF  |. 6A 14          PUSH 14                                  ; /Count = 14 (20.)
+004036C1  |. 8D45 D8        LEA EAX,DWORD PTR SS:[EBP-28]            ; |
+004036C4  |. 50             PUSH EAX                                 ; |Buffer
+004036C5  |. 6A 6B          PUSH 6B                                  ; |ControlID = 6B (107.)
+004036C7  |. 8B4D 08        MOV ECX,DWORD PTR SS:[EBP+8]             ; |
+004036CA  |. 51             PUSH ECX                                 ; |hWnd
+004036CB  |. FF15 98144A00  CALL DWORD PTR DS:[4A1498]               ; \GetDlgItemTextA
+
+Chạy qua 1 lần thì mình chắc chắn được đây là 2 lời gọi nhập inputName và inputSerial. Vậy mình sẽ bắt đầu debug ngay sau đoạn code này
+004036D1  |. 3BF4           CMP ESI,ESP
+004036D3  |. E8 681F0100    CALL 1_4.00415640                       ;Chuyển inputSerial thành 1 chuỗi
+004036D8  |. 8D55 D8        LEA EDX,DWORD PTR SS:[EBP-28]           ;Lưu chuỗi đấy vài EDX
+004036DB  |. 52             PUSH EDX
+004036DC  |. E8 5F290100    CALL 1_4.00416040                       ;Đảo ngược inputSerial
+004036E1  |. 83C4 04        ADD ESP,4
+004036E4  |. 8D45 EC        LEA EAX,DWORD PTR SS:[EBP-14]       
+004036E7  |. 50             PUSH EAX
+004036E8  |. E8 D3280100    CALL 1_4.00415FC0                       ;Đảo ngược inputName
+004036ED  |. 83C4 04        ADD ESP,4
+004036F0  |. 8945 C0        MOV DWORD PTR SS:[EBP-40],EAX           ;Chuẩn bị vào 1 vòng lặp, lưu độ dài inputName vào EBP - 0x40 
+004036F3  |. 8B4D B8        MOV ECX,DWORD PTR SS:[EBP-48]           
+004036F6  |. 334D B8        XOR ECX,DWORD PTR SS:[EBP-48]           
+004036F9  |. 894D B8        MOV DWORD PTR SS:[EBP-48],ECX           ;3 lệnh tiếp theo reset lại vùng nhớ tại EBP - 0x48 về 0
+004036FC  |. C745 AC 000000>MOV DWORD PTR SS:[EBP-54],0             ;Reset EBP - 0x54 về 0, đây sẽ là vùng nhớ giữ biến đếm của vòng lặp
+00403703  |. EB 09          JMP SHORT 1_4.0040370E                  ;Vào vòng lặp
+00403705  |> 8B55 AC        /MOV EDX,DWORD PTR SS:[EBP-54]          ;EDX = index
+00403708  |. 83C2 01        |ADD EDX,1                              ;EDX++
+0040370B  |. 8955 AC        |MOV DWORD PTR SS:[EBP-54],EDX          ;Lưu index vào EBP - 0x54
+0040370E  |> 8B45 AC         MOV EAX,DWORD PTR SS:[EBP-54]          ;Gán EAX là biến đếm(index)
+00403711  |. 3B45 C0        |CMP EAX,DWORD PTR SS:[EBP-40]          ;Kiểm tra if(index < inputName.length())
+00403714  |. 7D 1F          |JGE SHORT 1_4.00403735                 ;Nếu index >=inputName.length() thì thoát vòng lặp
+00403716  |. 8B4D AC        |MOV ECX,DWORD PTR SS:[EBP-54]          ;ECX = index
+00403719  |. 0FBE540D EC    |MOVSX EDX,BYTE PTR SS:[EBP+ECX-14]     ;Gán inputName[index] vào EDX
+0040371E  |. 8955 BC        |MOV DWORD PTR SS:[EBP-44],EDX          ;lưu inputName[index] vào vùng nhớ EBP - 0x44
+00403721  |. 8B45 BC        |MOV EAX,DWORD PTR SS:[EBP-44]          ;EAX = inputName[index]
+00403724  |. 83E8 20        |SUB EAX,20                             ;EAX -= 0x20
+00403727  |. 8945 BC        |MOV DWORD PTR SS:[EBP-44],EAX          ;Lưu EAX vào EBP - 0x44
+0040372A  |. 8B4D B8        |MOV ECX,DWORD PTR SS:[EBP-48]          ;Chuyển giá trị từ vùng nhớ EBP - 0x48 và ECX
+0040372D  |. 2B4D BC        |SUB ECX,DWORD PTR SS:[EBP-44]          ;ECX -= (inputName[index] - 0x20)
+00403730  |. 894D B8        |MOV DWORD PTR SS:[EBP-48],ECX          ;Lưu ECX vào EBP - 0x48
+00403733  |.^EB D0          \JMP SHORT 1_4.00403705                 ;Lặp
+00403735  |> 8BF4           MOV ESI,ESP
+00403737  |. 8B55 B8        MOV EDX,DWORD PTR SS:[EBP-48]
+0040373A  |. 52             PUSH EDX                                 ; /<%lX>
+0040373B  |. 68 60B14700    PUSH 1_4.0047B160                        ; |Format = "%lX"
+00403740  |. 8D45 C4        LEA EAX,DWORD PTR SS:[EBP-3C]            ; |
+00403743  |. 50             PUSH EAX                                 ; |s
+00403744  |. FF15 94144A00  CALL DWORD PTR DS:[4A1494]               ; \wsprintfA
+0040374A  |. 83C4 0C        ADD ESP,0C
+0040374D  |. 3BF4           CMP ESI,ESP
+0040374F  |. E8 EC1E0100    CALL 1_4.00415640
+00403754  |. 8B4D BC        MOV ECX,DWORD PTR SS:[EBP-44]
+00403757  |. 334D BC        XOR ECX,DWORD PTR SS:[EBP-44]
+0040375A  |. 894D BC        MOV DWORD PTR SS:[EBP-44],ECX
+0040375D  |. 8B55 BC        MOV EDX,DWORD PTR SS:[EBP-44]
+00403760  |. 0355 B8        ADD EDX,DWORD PTR SS:[EBP-48]
+00403763  |. 8955 BC        MOV DWORD PTR SS:[EBP-44],EDX
+00403766  |. 8B45 BC        MOV EAX,DWORD PTR SS:[EBP-44]
+00403769  |. 0FAF45 B8      IMUL EAX,DWORD PTR SS:[EBP-48]
+0040376D  |. 8945 BC        MOV DWORD PTR SS:[EBP-44],EAX
+00403770  |. 8B4D B4        MOV ECX,DWORD PTR SS:[EBP-4C]
+00403773  |. 034D BC        ADD ECX,DWORD PTR SS:[EBP-44]
+00403776  |. 894D B4        MOV DWORD PTR SS:[EBP-4C],ECX
+00403779  |. 8B55 B0        MOV EDX,DWORD PTR SS:[EBP-50]
+0040377C  |. 2B55 B8        SUB EDX,DWORD PTR SS:[EBP-48]
+0040377F  |. 8955 B0        MOV DWORD PTR SS:[EBP-50],EDX
+00403782  |. 8B45 B0        MOV EAX,DWORD PTR SS:[EBP-50]
+00403785  |. 3345 BC        XOR EAX,DWORD PTR SS:[EBP-44]
+00403788  |. 8945 B0        MOV DWORD PTR SS:[EBP-50],EAX
+0040378B  |. 8B4D B8        MOV ECX,DWORD PTR SS:[EBP-48]
+0040378E  |. 0FAF4D BC      IMUL ECX,DWORD PTR SS:[EBP-44]
+00403792  |. 894D B8        MOV DWORD PTR SS:[EBP-48],ECX
+00403795  |. 8D55 C4        LEA EDX,DWORD PTR SS:[EBP-3C]   ;Đoạn trên chuỗi giá trị ở EBP - 0x48 sau vòng lặp thành chuỗi và lưu vào EDX
+
+
+Đoạn code này khá là dài và cũng có khá nhiều lệnh CALL vào các hàm con.
+Để tiếp kiệm giờ gian và não thì mình sẽ F8 qua các lệnh và cố gắng đoán ra ý nghĩa 
+của các lệnh CALL nhiều nhất có thể. Mình sẽ command lại ở trên.
+Sau vòng lặp. Ta có thể thấy là kết quả lưu tại EBP - 0x48 chính là magicKey nhưng đang ở dạng số.
+Từ sau vòng lặp đến khi bắt đầu so sánh magic key còn 1 đoạn lệnh khoảng 10 dòng. Dễ dàng đoán được
+đoạn lệnh này là dùng để chuyển số ở hệ thập lục phân thành chuỗi. 
+Qua nhiều lần kiểm thử thì mình có thể chắc chắn được điều đó.
+Nhiêu đây thông tin cũng đủ để mình tạo ra keygen của bài này rồi ha :)))
+

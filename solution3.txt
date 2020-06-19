@@ -1,0 +1,54 @@
+Bài này khá thú vị. 
+Dù mình đã chạy thử, nhập key "SonDepTrai" và nhập được thông báo "bad password".
+Nhưng mình lại không tìm được badboy nào trong Olly.
+Manh mối duy nhất có bây giờ là:
+    GetShortPathNameA
+    "Quick Batch File compiler"
+    "BAT"
+    "FILES"
+    ...
+Nhiêu đó cũng chẳng giúp gì được mình nhiều cả.
+Tuyệt vọng thật sự.
+Giờ chỉ có đường chạy từng lệnh và chờ xem có phép màu nào giúp mình qua được bài này 
+hay không thôi... :(
+
+Và nó đã xảy ra. Khi mình F7 liên tục, theo dỗi sự thay đổi giá trị của các thanh ghi 
+và các giá trị được vào stack. Mình đã thấy 1 đường dẫn là dẫn đến 1 thư mục trong ổ C.
+Các gợi ý ngày càng rõ ràng (đường dẫn ngày càng cụ thể) và tại 1 dòng lệnh nào đó, mình nhận được 1 đường dẫn đến 1 file .bat 
+    "C:\Users\SON\AppData\Local\Temp\bt6382.bat"
+
+Dĩ nhiên là mình phải mở xem có cái trong thư mục này rồi. 
+Tất nhiên là mình tìm được 1 file .bat có tên là "bt6382.bat"
+Mở ở chế độ edit. Mình nhận được 1 đoạn code khá đơn giản:
+@shift 1
+ECHO OFF
+cls
+REM title crackme - Batch or not?
+set r=o
+set o=t
+set llo=he
+set t=y
+set h=u
+set j=w
+set he=llo
+                              echo its the first time i give someone try 2 crack this kind of CM.
+                              echo g00d luck!    - N3tRAt aka V[i]RuS
+echo Enter Password:
+set /p password=
+if "%password%"=="%o%%llo%%he%%h%%t%%windir%billgates..2006" goto good
+if not "%password%"=="%o%%llo%%he%%h%%t%%windir%billgates..2006" goto bad
+:good
+echo good password
+pause
+exit
+:bad
+echo bad password
+pause
+exit
+
+Chạy file này mình sẽ được 1 cửa sổ cmdline giống như khi chạy 1.3.exe.
+Thì ra là 1.3.exe tạo ra 1 file khác và để file đấy chạy. Hèn gì mình chẳng tìm
+được badboy hey goodboy nào khi debug cả.
+Nội dung của file chỉ là nhập vào 1 chuỗi rồi so sánh với 1 chuỗi mặc định. Cụ thể là: "%o%%llo%%he%%h%%t%%windir%billgates..2006"
+Nhìn thì khá phức tạp và mình làm biếng để dịch từ từ chuỗi này ra chuỗi thực sự. Ví vậy nên mình quyết định echo ra để xem cho nhanh :)))
+Đó cũng là nội dung chính của keygen mà mình viết bằng batch file :)))
