@@ -16,6 +16,15 @@ Và nó đã xảy ra. Khi mình F7 liên tục, theo dỗi sự thay đổi gi�
 và các giá trị được vào stack. Mình đã thấy 1 đường dẫn là dẫn đến 1 thư mục trong ổ C.
 Các gợi ý ngày càng rõ ràng (đường dẫn ngày càng cụ thể) và tại 1 dòng lệnh nào đó, mình nhận được 1 đường dẫn đến 1 file .bat 
     "C:\Users\SON\AppData\Local\Temp\bt6382.bat"
+Cụ thể thì ở đoạn chương trình này:
+00419495   . 8D45 BC        LEA EAX,DWORD PTR SS:[EBP-44]
+00419498   . 8B0D DCE84100  MOV ECX,DWORD PTR DS:[41E8DC]
+0041949E   . 8B15 D4E84100  MOV EDX,DWORD PTR DS:[41E8D4]
+004194A4   . E8 9FB0FEFF    CALL 1_3.00404548
+004194A9   . 8B55 BC        MOV EDX,DWORD PTR SS:[EBP-44]
+004194AC   . A1 70E84100    MOV EAX,DWORD PTR DS:[41E870]
+004194B1   . 8B08           MOV ECX,DWORD PTR DS:[EAX]
+004194B3   . FF51 74        CALL DWORD PTR DS:[ECX+74]
 
 Dĩ nhiên là mình phải mở xem có cái trong thư mục này rồi. 
 Tất nhiên là mình tìm được 1 file .bat có tên là "bt6382.bat"
